@@ -22,7 +22,7 @@ export const LayoutLoader = () => {
       </div>
 
       {/* <!-- Third Section --> */}
-      <div className="hidden md:block md:col-span-4 lg:col-span-3 h-full ">
+      <div className="hidden md:block md:col-span-4 lg:col-span-3 h-full text-black">
         <div className="bg-gray-200 animate-pulse h-[100vh] w-full"></div>
       </div>
     </div>

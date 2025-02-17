@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -11,11 +11,22 @@ import {
   Typography,
   Button,
   Avatar,
+  Skeleton,
 } from "@mui/material";
 import { sampleNotifications } from "../constants/sampleData";
+import { useGetNotificationsQuery } from "../redux/api/api";
+import { useErrors } from "../hooks/hook";
 
 const Notifications = () => {
-  const frinedRequestHandler = ({ _id, accept }) => {};
+  const [allRequests, setAllRequests] = useState([]); // Define allRequests as an empty array
+
+  const { isLoading, data, error, isError } = useGetNotificationsQuery();
+
+  const friendRequestHandler = ({ _id, accept }) => {};
+
+  useErrors([{ error, isError }]);
+
+  console.log(data);
 
   return (
     <Dialog open>
@@ -26,17 +37,23 @@ const Notifications = () => {
       >
         <DialogTitle>Notifications</DialogTitle>
 
-        {sampleNotifications.length > 0 ? (
-          sampleNotifications.map(({ sender, _id }) => (
-            <NotificationItem
-              sender={sender}
-              _id={_id}
-              handler={frinedRequestHandler}
-              key={_id}
-            />
-          ))
+        {isLoading ? (
+          <Skeleton />
         ) : (
-          <Typography textAlign={"center"}>0 notifications</Typography>
+          <>
+            {allRequests && allRequests.length > 0 ? (
+              allRequests?.map(({ request }) => (
+                <NotificationItem
+                  sender={request.sender}
+                  _id={request._id}
+                  handler={friendRequestHandler}
+                  key={request._id}
+                />
+              ))
+            ) : (
+              <Typography textAlign={"center"}>0 notifications</Typography>
+            )}
+          </>
         )}
       </Stack>
     </Dialog>

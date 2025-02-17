@@ -19,6 +19,13 @@ import {
 // import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNavigate } from "react-router-dom";
+import { UserNotExists } from "../redux/reducers/auth";
+import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
+import axios from "axios";
+import { server } from "../constants/config";
+import { setIsMobile } from "../redux/reducers/misc";
+import { setIsSearch } from "../redux/reducers/misc";
 
 const SearchDialog = lazy(() => import("../specific/Search"));
 const NotificationsDialog = lazy(() => import("../specific/Notifications"));
@@ -26,18 +33,21 @@ const NewGroupDialog = lazy(() => import("../specific/NewGroup"));
 
 const Header = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const [isMobile, setIsMobile] = useState(false);
-  const [isSearch, setIsSearch] = useState(false);
+  const {isSearch} = useSelector(state=>state.misc);
+
+  
   const [isNewGroup, setIsNewGroup] = useState(false);
   const [isNotifications, setIsNotifications] = useState(false);
 
   const handleMobile = () => {
-    setIsMobile((prev) => !prev);
+    dispatch(setIsMobile(true));
   };
 
-  const openSearchDialog = () => {
-    setIsSearch((prev) => !prev);
+  const openSearch = () => {
+    dispatch(setIsSearch(true));
+
   };
 
   const openNewGroup = () => {
@@ -50,8 +60,16 @@ const Header = () => {
 
   const navigateToGroup = () => navigate("/groups");
 
-  const logouthandler = () => {
-    console.log("Logout");
+  const logouthandler = async () => {
+    try {
+      const { data } = await axios.get(`${server}/api/v1/user/logout`, {
+        withCredentials: true,
+      });
+      dispatch(UserNotExists());
+      toast.success(data.message);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Something Went Wrong");
+    }
   };
 
   return (
@@ -60,7 +78,7 @@ const Header = () => {
       <div className="flex-grow h-16">
         <div className="bg-orange-400 static"></div>
 
-        <div className="flex items-center bg-gradient-to-r from-purple-400 to-orange-400 p-4">
+        <div className="flex items-center bg-gradient-to-r from-purple-600 to-orange-500 p-4">
           <h6 className="hidden sm:block text-lg font-semibold text-white">
             Ourchat
           </h6>
@@ -77,7 +95,7 @@ const Header = () => {
             <div>
               <button
                 className="text-white size-auto"
-                onClick={openSearchDialog}
+                onClick={openSearch}
               >
                 <SearchIcon />
               </button>
@@ -91,7 +109,6 @@ const Header = () => {
                 onClick={openNewGroup}
               >
                 <AddIcon />
-                
               </button>
             </div>
           </Tooltip>

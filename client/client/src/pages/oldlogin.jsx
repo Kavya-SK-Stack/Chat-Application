@@ -5,17 +5,20 @@ import {
   Avatar,
   IconButton,
   Stack,
-} from '@mui/material'
-import React, { useState } from 'react'
-import {CameraAlt as CameraAltIcon} from '@mui/icons-material'
-import { VisuallyHiddenInput } from '../components/StyledComponents';
-import { useFileHandler, useInputValidation, useStrongPassword } from '6pp';
-import { usernameValidator } from '../utils/validators';
+} from "@mui/material";
+import React, { useState } from "react";
+import { CameraAlt as CameraAltIcon } from "@mui/icons-material";
+import { VisuallyHiddenInput } from "../components/StyledComponents";
+import { useFileHandler, useInputValidation, useStrongPassword } from "6pp";
+import { usernameValidator } from "../utils/validators";
+import { useDispatch } from "react-redux";
+import { toast, Toaster } from "react-hot-toast";
+import { UserExists } from "../redux/reducers/auth";
+import axios from "axios";
+import { server } from "../constants/config";
 
 const Login = () => {
-
   const [isLogin, setIsLogin] = useState(true);
-
 
   const toggleLogin = () => setIsLogin((prev) => !prev);
 
@@ -26,12 +29,75 @@ const Login = () => {
 
   const avatar = useFileHandler("single");
 
-  const handleLogin = (e) => {
+  const dispatch = useDispatch();
+
+  const handleLogin = async (e) => {
     e.preventDefault();
+    console.log("handleLogin function is triggered");
+
+    const config = {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    try {
+      const { data } = await axios.post(
+        `${server}/api/v1/user/login`,
+        {
+          username: username.value,
+          password: password.value,
+        },
+        config
+      );
+      dispatch(UserExists(true));
+
+      toast.success(data.message);
+    } catch (error) {
+    
+      toast.error(error?.response?.data?.message || "Something Went Wrong");
+    }
   };
 
-  const handleSignUp = (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
+
+    const fileInput = document.getElementById("avatar-input");
+    const file = fileInput.files[0];
+    console.log(file);
+    const formData = new FormData();
+    formData.append("avatar", avatar.file, avatar.file.name);
+    formData.append("name", name.value);
+    formData.append("bio", bio.value);
+    formData.append("username", username.value);
+    formData.append("password", password.value);
+
+    const config = {
+      withCredentials: true,
+      headers: { 
+        "Content-Type": "multipart/form-data",
+
+       },
+    };
+
+    try {
+      const { data } = await axios.post(
+        `${server}/api/v1/user/new`,
+        formData,
+        config
+      );
+
+      dispatch(UserExists(true));
+      toast.success(data.message);
+    } catch (error) {
+      console.error("Error Object:", error);
+      console.error("Error Response:", error.response);
+      console.error("Error Data:", error?.response?.data);
+      console.error("Error Status:", error?.response?.status);
+
+      toast.error(error?.response?.data?.message || "Something Went Wrong");
+    }
   };
 
   return (
@@ -40,7 +106,7 @@ const Login = () => {
         <div className="border-2 p-8 rounded-lg shadow-md w-full max-w-md bg-gradient-to-br from-purple-300 to-orange-400">
           {isLogin ? (
             <>
-              <form onSubmit={handleSignUp}>
+              <form onSubmit={handleLogin}>
                 <h2 className="text-2xl font-bold text-center mb-6 text-orange-600">
                   Login
                 </h2>
@@ -258,8 +324,6 @@ const Login = () => {
       </div>
     </Container>
   );
-
 };
 
-export default Login
-
+export default Login;

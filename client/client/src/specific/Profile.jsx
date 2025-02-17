@@ -6,8 +6,9 @@ import {
   CalendarMonth as CalendarIcon,
 } from "@mui/icons-material";
 import moment from "moment";
+import { transformImage } from "../lib/features";
 
-const Profile = ({ text, Icon, heading }) => {
+const Profile = ({ user }) => {
   return (
     <Stack
       spacing={"1rem"}
@@ -16,6 +17,7 @@ const Profile = ({ text, Icon, heading }) => {
       marginTop={"2rem"}
     >
       <Avatar
+        src={transformImage(user?.avatar?.url)}
         sx={{
           width: 150,
           height: 150,
@@ -24,18 +26,19 @@ const Profile = ({ text, Icon, heading }) => {
           border: "5px solid white",
         }}
       />
-      <ProfileCard heading={"Bio"} text={"Lorem ipsum dolor sit amet."} />
+      <ProfileCard heading={"Bio"} text={user?.bio} />
 
       <ProfileCard
         heading={"Username"}
-        text={"username"}
+        text={user?.username}
         Icon={<UserNameIcon />}
       />
-      <ProfileCard heading={"Name"} text={"Abhishek"} Icon={<FaceIcon />} />
+      <ProfileCard heading={"Name"} text={user?.name} Icon={<FaceIcon />} />
 
       <ProfileCard
         heading={"Joined"}
-        text={moment("2025-01-29T00:00:00.000Z").fromNow()}
+        text={moment(user?.createdAt).fromNow()}
+        // 2025-01-29T00:00:00.000Z
         Icon={<CalendarIcon />}
       />
     </Stack>
@@ -46,14 +49,14 @@ const ProfileCard = ({ text, Icon, heading }) => (
   <Stack
     direction={"row"}
     alignItems={"center"}
-    color={"white"}
+    color={"black"}
     textAlign={"center"}
     spacing={"1rem"}
   >
     {Icon && Icon}
     <Stack>
       <Typography variant="body1">{text}</Typography>
-      <Typography color={"gray"} variant="caption">
+      <Typography className="text-gray-300" variant="caption">
         {heading}
       </Typography>
     </Stack>

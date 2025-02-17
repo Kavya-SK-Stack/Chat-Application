@@ -32,9 +32,12 @@ import UserItem from "../shared/UserItem";
 // import { confirmDeleteDialog } from "../components/dialogs/confirmDeleteDialog";
 import Loading from "../pages/admin/Loading";
 
+// import { ConfirmDeleteDialog } from "../components/dialogs/confirmDeleteDialog";
+
 const ConfirmDeleteDialog = lazy(() =>
   import("../components/dialogs/confirmDeleteDialog")
 );
+
 
 const AddMemberDialog = lazy(() =>
   import("../components/dialogs/AddMemberDialog")
@@ -89,8 +92,8 @@ const Groups = () => {
      closeConfirmDeleteHandler();
   };
 
-  const removeMemberHandler = () => {
-    console.log("Remove Member");
+  const removeMemberHandler = (id) => {
+    console.log("Remove Member", id);
   };
 
   useEffect(() => {
@@ -132,7 +135,7 @@ const Groups = () => {
   );
 
   const GroupName = (
-    <div className="flex flex-row items-center justify-center p-8 gap-4">
+    <div className="flex flex-row items-center justify-center p-8 gap-4 " >
       {isEdit ? (
         <>
           <TextField
@@ -178,7 +181,7 @@ const Groups = () => {
 
   return (
     <div className="h-screen grid grid-cols-1 sm:grid-cols-4">
-      <div className="hidden sm:block bg-gradient-to-tr from-purple-500 to-orange-500">
+      <div className="hidden sm:block bg-gradient-to-tr from-purple-700 to-orange-500 ">
         <GroupsList myGroups={sampleChats} chatId={chatId} />
       </div>
       <div className="col-span-1 sm:col-span-3 flex flex-col items-center relative p-4 sm:p-12">
@@ -215,7 +218,8 @@ const Groups = () => {
 
       {isAddMember && (
         <Suspense fallback={<Backdrop open />}>
-          <AddMemberDialog />
+          <AddMemberDialog
+          />
         </Suspense>
       )}
 
@@ -258,14 +262,14 @@ const GroupsListItem = memo(({ group, chatId }) => {
   const { name, avatar, _id } = group;
 
   return (
-    // not working see after
+    
     <Link
       to={`?group=${_id}`}
       onClick={(e) => {
         if (chatId === _id) e.preventDefault();
       }}
     >
-      <div className="flex gap-4 items-center flex-row ">
+      <div className="flex items-center flex-row ">
         <AvatarCard avatar={avatar} />
         <Typography>{name}</Typography>
       </div>

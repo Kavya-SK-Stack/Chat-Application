@@ -1,12 +1,12 @@
-import { Dialog, Button, DialogActions,DialogContentText,DialogContent,DialogTitle } from "@mui/material";
-import React from "react";
+// import { Dialog, Button, DialogActions,DialogContentText,DialogContent,DialogTitle } from "@mui/material";
+// import React from "react";
 
-const ConfirmDeleteDialog = ({ open, handleClose, deleteHandler }) => {
-  console.log("delete");
-  return
-  (
-    <div>called</div>
-  )
+// const ConfirmDeleteDialog = ({ open, handleClose, deleteHandler }) => {
+//   console.log("delete");
+//   return
+//   (
+//     <div>called</div>
+//   )
   // (
     // <Dialog open={open} onClose={handleClose}>
     //   <DialogTitle>Delete Group</DialogTitle>
@@ -21,6 +21,6 @@ const ConfirmDeleteDialog = ({ open, handleClose, deleteHandler }) => {
     //   </DialogActions>
     // </Dialog>
   // );
-};
+// };
 
-export { ConfirmDeleteDialog } ;
+// export { ConfirmDeleteDialog } ;
