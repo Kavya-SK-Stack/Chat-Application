@@ -6,6 +6,7 @@ import { ErrorHandler } from "../utils/utility.js";
 import jwt from "jsonwebtoken";
 import { cookieOptions } from "../utils/features.js";
 
+
 const adminLogin = TryCatch(async (req,res,next) => {
  
   const { secretKey } = req.body;
@@ -115,21 +116,26 @@ const allMessages = TryCatch(async (req, res) => {
         .populate("sender", "name avatar")
         .populate("chat", " groupChat");
 
-    const transformedMessages =  messages.map( ({ sender, chat, content, createdAt, _id, attachments }) => ({
-        
-            _id,
-           attachments,
-            content,
-            createdAt,
-           chat: chat.id,
-            groupChat: chat.groupChat,
-            sender: {
-                _id: sender._id,
-                name: sender.name,
-                avatar: sender.avatar.url
-            }
-        })
-        );
+    const transformedMessages = messages.map((message) => {
+  const { sender, chat, content, createdAt, _id, attachments } = message;
+
+  return {
+    _id,
+    attachments,
+    content,
+    createdAt,
+    chat: chat ? chat.id : null,
+    groupChat: chat ? chat.groupChat : null,
+    sender: sender
+      ? {
+          _id: sender?._id, 
+          name: sender?.name, 
+          avatar: sender?.avatar ? sender.avatar.url : null,
+        }
+      : null,
+  };
+});
+    
     
 
     return res.status(200).json({
@@ -177,7 +183,8 @@ const indexApprox =
     groupsCount,
     userCount,
     messageCount,
-    totalChatscount,messagesChart: messages,
+    totalChatscount,
+    messagesChart: messages,
   };
  
     

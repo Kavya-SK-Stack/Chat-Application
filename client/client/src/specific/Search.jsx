@@ -16,7 +16,7 @@ import UserItem from "../shared/UserItem";
 import { sampleUsers } from "../constants/sampleData";
 import { useSelector, useDispatch } from "react-redux";
 import { setIsSearch } from "../redux/reducers/misc";
-import { useLazySearchUserQuery, useSendFriendRequeustMutation } from "../redux/api/api";
+import { useLazySearchUserQuery, useSendFriendRequestMutation } from "../redux/api/api";
 import { toast } from "react-hot-toast";
 import { useAsyncMutation } from "../hooks/hook";
 
@@ -26,12 +26,21 @@ const Search = () => {
 
   const [searchUser] = useLazySearchUserQuery();
   
-  const [sendFriendRequest, isLoadingSendFriendRequest] = useAsyncMutation(useSendFriendRequeustMutation);
+  const [sendFriendRequest, isLoadingSendFriendRequest] = useAsyncMutation(useSendFriendRequestMutation);
+  // console.log("useSendFriendRequeustMutation:", useSendFriendRequeustMutation);
 
   const dispatch = useDispatch();
 
-  const search = useInputValidation();
+  const [searchValue, setSearchValue] = useState("");
 
+  const handleSearchChange = (event) => {
+    setSearchValue(event.target.value);
+  };
+
+
+  const search = useInputValidation(searchValue, handleSearchChange);
+
+  
   const [users, setUsers] = useState(sampleUsers);
 
   const addFriendHandler = async (id) => {
@@ -71,7 +80,7 @@ const Search = () => {
           variant="outlined"
           size="small"
           background={"green"}
-          InputProps={{
+          input={{
             startAdornment: (
               <InputAdornment position="start">
                 <SearchIcon />

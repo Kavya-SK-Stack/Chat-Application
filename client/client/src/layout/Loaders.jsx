@@ -1,8 +1,10 @@
 import React from "react";
 import Skeleton from "@mui/material/Skeleton";
 import { Stack } from "@mui/material";
+import { BouncingSkeleton } from "../components/StyledComponents";
 
-export const LayoutLoader = () => {
+const LayoutLoader = () => {
+   
   return (
     <div className="grid grid-cols-12 h-[calc(100vh-4rem)] space-x-4">
       <div className="hidden sm:block sm:col-span-4 md:col-span-3 h-full">
@@ -28,3 +30,47 @@ export const LayoutLoader = () => {
     </div>
   );
 };
+
+const TypingLoader = () => { 
+  return (
+    <div className="flex gap-2 flex-row p-2 justify-center">
+      <BouncingSkeleton
+        variant="circular"
+        width={15}
+        height={15}
+        style={{
+          animationDelay: "0.1s",
+        }}
+      />
+
+      <BouncingSkeleton
+        variant="circular"
+        width={15}
+        height={15}
+        style={{
+          animationDelay: "0.2s",
+        }}
+      />
+
+      <BouncingSkeleton
+        variant="circular"
+        width={15}
+        height={15}
+        style={{
+          animationDelay: "0.4s",
+        }}
+      />
+
+      <BouncingSkeleton
+        variant="circular"
+        width={15}
+        height={15}
+        style={{
+          animationDelay: "0.6s",
+        }}
+      />
+    </div>
+  );
+};
+
+export { TypingLoader, LayoutLoader};

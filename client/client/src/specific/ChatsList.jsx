@@ -2,7 +2,7 @@ import React from "react";
 import { Stack } from "@mui/material";
 import ChatItem from "../shared/ChatItem";
 
-const ChatsList = ({
+const ChatList = ({
   w = "100%",
   chats = [],
   chatId,
@@ -17,7 +17,7 @@ const ChatsList = ({
 }) => {
   
   return (
-    <Stack width={w} direction={"column"} >
+    <Stack width={w} direction={"column"} overflow={"auto"} height={"100%"}>
       {chats?.map((data, index) => {
         const { avatar, _id, name, groupChat, members } = data;
 
@@ -25,7 +25,8 @@ const ChatsList = ({
           ({ chatId }) => chatId === _id
         );
 
-        const isOnline = members?.some((member) => onlineUsers.includes(_id));
+        const isOnline = members?.some((member) =>
+          onlineUsers.includes(member));
 
         return (
           <ChatItem
@@ -46,4 +47,4 @@ const ChatsList = ({
   );
 };
 
-export default ChatsList;
+export default ChatList;

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { useState } from "react";
 
+
 const useErrors = (errors = []) => {
   useEffect(() => {
       errors.forEach(({ isError, error, fallback }) => {   
@@ -16,15 +17,19 @@ const useErrors = (errors = []) => {
   }, [errors]);
 };
 
-const useAsyncMutation = (mutatationHook) => {
+
+const useAsyncMutation = (mutationHook) => {
+  
 
     const [isLoading, setIsLoading] = useState(false);
     const [data, setData] = useState(null);
 
-    const [mutate] = mutatationHook()
+ 
+  const [mutate] = mutationHook();
+  
+
 
     const executeMutation = async (toastMessage, ...args) => {
-
         setIsLoading(true);
         const toastId = toast.loading(toastMessage || "Updating data...");
 
@@ -49,11 +54,27 @@ const useAsyncMutation = (mutatationHook) => {
             setIsLoading(false);
         }
 
-     };
-
-
+  };
+  
     return [executeMutation, isLoading, data];
 
 };
 
-export { useErrors, useAsyncMutation };
+
+ const useSocketEvents = (socket, handlers) => {
+   useEffect(() => {
+     Object.entries(handlers).forEach(([event, handler]) => {
+       socket.on(event, handler);
+       
+     });
+
+     return () => {
+       Object.entries(handlers).forEach(([event, handler]) => {
+         socket.off(event, handler);
+       });
+     };
+   }, [socket, handlers]);
+ };
+
+
+export { useErrors, useAsyncMutation, useSocketEvents };

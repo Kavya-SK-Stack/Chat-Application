@@ -1,7 +1,7 @@
 import express from "express";
 import { isAuthenticated } from "../middlewares/auth.js";
 import { getMyChats, newGroupChat, getMyGroups, addMembers, leaveGroup, removeMember, sendAttachments, getChatDetails, renameGroup, deleteChat, getMessages } from "../controllers/chat.js";
-import { attachmentsMulter } from "../middlewares/multer.js";
+import {uploadAttachments} from "../middlewares/multer.js";
 import { addMemberValidator, chatIdValidator, newGroupValidator, removeMemberValidator, renameValidator, sendAttachmentsValidator, validateHandler } from "../lib/validators.js";
 
 const app = express.Router();
@@ -22,7 +22,7 @@ app.put("/removemember", removeMemberValidator(), validateHandler, removeMember)
 
 app.delete("/leave/:id", chatIdValidator(), validateHandler, leaveGroup);
 
-app.post("/message", attachmentsMulter,sendAttachmentsValidator(), validateHandler, sendAttachments);
+app.post("/message", uploadAttachments,sendAttachmentsValidator(), validateHandler, sendAttachments);
 
 // Get messages
 app.get("/message/:id", chatIdValidator(), validateHandler, getMessages);

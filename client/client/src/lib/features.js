@@ -18,7 +18,14 @@ const fileFormat = (url = "") => {
 
   return "file";
 };
-export const transformImage = (url = "", width = 100) => url;
+const transformImage = (url = "", width = 100) => {
+  if (typeof url !== "string" || !url.startsWith("http")) {
+    return url;
+  }
+
+  const newUrl = url.replace("upload/", `upload/dpr_auto/w_${width}/`);
+  return newUrl;
+};
 
 const getLast7Days = () => {
   const currentDate = moment();
@@ -36,4 +43,12 @@ const getLast7Days = () => {
   return last7Days;
 };
 
-export { fileFormat, getLast7Days };
+const getOrSaveFromStorage = ({ key, value, get }) => {
+  if (get) {
+    const storedValue = localStorage.getItem(key);
+    return storedValue === "undefined" ? null : JSON.parse(storedValue);
+  } else {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+};
+export { fileFormat, getLast7Days, transformImage, getOrSaveFromStorage };

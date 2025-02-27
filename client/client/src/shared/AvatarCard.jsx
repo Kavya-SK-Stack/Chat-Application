@@ -19,8 +19,7 @@ const AvatarCard = ({ avatar = [], max = 4 }) => {
           />
         ))}
         {avatar.length > max && (
-         
-        <div
+          <div
             className="absolute w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-600"
             style={{ left: `${max * 12}px` }}
           >

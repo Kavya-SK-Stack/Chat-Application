@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { v4 as uuid } from "uuid";
 import { v2 as cloudinary } from "cloudinary";
-import { getBase64 } from "../lib/helper.js";
+import { getBase64, getSockets } from "../lib/helper.js";
 
 const cookieOptions = {
   maxAge: 15 * 24 * 60 * 60 * 1000,
@@ -26,43 +26,38 @@ const sendToken = (res, user, code, message) => {
 
   return res.status(code).cookie("ourchat-token", token, cookieOptions).json({
     success: true,
+    user,
     message,
   });
 };
 
 const emitEvent = (req, event, users, data) => {
-  console.log("Emmiting event", event);
-};
+  const io = req.app.get("io"); // Ensure io is retrieved from Express app
 
-const uploadFilesToCloudinary = async (files = []) => {
-  const uploadPromises = files.map((file) => {
-    return new Promise((resolve, reject) => {
-      cloudinary.uploader.upload(
-       getBase64(file),
-        {
-          resource_type: "auto",
-          public_id: uuid(),
-        },
-        (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        }
-      );
-    });
-  });
-    
-    try {
-        const results = await Promise.all(uploadPromises);
+  if (!io) {
+    console.error("emitEvent Error: Socket.io instance not found.");
+    return;
+  }
 
-        const formattedResults = results.map((result) => ({
-            public_id: result.public_id,
-            url: result.secure_url,
-        }));
+  // Ensure users array is valid
+  if (!Array.isArray(users) || users.length === 0) {
+    console.error("emitEvent Error: No valid users to send event.");
+    return;
+  }
 
-        return formattedResults;
-    } catch(err){
-        throw new Error("Error uploading files to Cloudinary",err);
-    }
+  let usersSocket = getSockets(users);
+
+  // Filter out undefined sockets
+  usersSocket = usersSocket.filter((socket) => socket !== undefined);
+
+  if (usersSocket.length === 0) {
+    console.error("emitEvent Error: No active sockets found for users:", users);
+    return;
+  }
+
+  console.log(`Emitting event: ${event} to users:`, usersSocket);
+
+  io.to(usersSocket).emit(event, data);
 };
 
 const deleteFilesFromCloudinary = async (public_ids) => {};
@@ -73,5 +68,4 @@ export {
   cookieOptions,
   emitEvent,
   deleteFilesFromCloudinary,
-  uploadFilesToCloudinary,
 };

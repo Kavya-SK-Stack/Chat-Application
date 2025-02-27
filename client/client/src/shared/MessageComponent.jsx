@@ -3,6 +3,7 @@ import React, { memo } from "react";
 import moment from "moment";
 import { fileFormat } from "../lib/features";
 import RenderAttachment from "./RenderAttachment";
+import { motion } from 'framer-motion'
 
 const MessageComponent = ({ message, user }) => {
   const { sender, content, attachments = [], createdAt } = message;
@@ -11,7 +12,9 @@ const MessageComponent = ({ message, user }) => {
 
   const timeAgo = moment(createdAt).fromNow();
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, x: "-100%" }}
+      whileInView={{ opacity: 1, x: 0 }}
       className={`${
         sameSender ? "self-end" : "self-start"
       } bg-gradient-to-br from-purple-600 to-orange-500 text-white p-2 rounded-md w-fit`}
@@ -43,7 +46,7 @@ const MessageComponent = ({ message, user }) => {
       <Typography variant="caption" color={"text.secondary"}>
         {timeAgo}
       </Typography>
-    </div>
+    </motion.div>
   );
 };
 

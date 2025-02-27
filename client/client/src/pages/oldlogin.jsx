@@ -17,8 +17,12 @@ import { UserExists } from "../redux/reducers/auth";
 import axios from "axios";
 import { server } from "../constants/config";
 
+const avatarInputRef = React.createRef();
+
+
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const toggleLogin = () => setIsLogin((prev) => !prev);
 
@@ -33,8 +37,10 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("handleLogin function is triggered");
 
+    const toastId = toast.loading("Logging In...");
+   
+    setIsLoading(true);
     const config = {
       withCredentials: true,
       headers: {
@@ -51,21 +57,29 @@ const Login = () => {
         },
         config
       );
-      dispatch(UserExists(true));
-
-      toast.success(data.message);
+      dispatch(UserExists(data.user));
+      toast.success(data.message, {
+        id: toastId,
+      });
     } catch (error) {
     
       toast.error(error?.response?.data?.message || "Something Went Wrong");
+    } finally {
+      setIsLoading(false);
     }
+    
   };
 
   const handleSignUp = async (e) => {
     e.preventDefault();
 
+    const toastId = toast.loading("Creating Account...");
+    setIsLoading(true);
+  
     const fileInput = document.getElementById("avatar-input");
     const file = fileInput.files[0];
     console.log(file);
+
     const formData = new FormData();
     formData.append("avatar", avatar.file, avatar.file.name);
     formData.append("name", name.value);
@@ -75,10 +89,10 @@ const Login = () => {
 
     const config = {
       withCredentials: true,
-      headers: { 
+      headers: {
         "Content-Type": "multipart/form-data",
 
-       },
+      },
     };
 
     try {
@@ -88,16 +102,17 @@ const Login = () => {
         config
       );
 
-      dispatch(UserExists(true));
-      toast.success(data.message);
+      dispatch(UserExists(data.user));
+      toast.success(data.message, {
+        id: toastId,
+      });
     } catch (error) {
-      console.error("Error Object:", error);
-      console.error("Error Response:", error.response);
-      console.error("Error Data:", error?.response?.data);
-      console.error("Error Status:", error?.response?.status);
-
+      
       toast.error(error?.response?.data?.message || "Something Went Wrong");
+    } finally {
+      setIsLoading(false);
     }
+  
   };
 
   return (
@@ -153,6 +168,7 @@ const Login = () => {
                 <button
                   type="submit"
                   className="w-full bg-gradient-to-br from-orange-400 to-purple-600 p-2 rounded-md hover:bg-orange-400 transition"
+                    disabled={isLoading}
                 >
                   Login
                 </button>
@@ -161,6 +177,7 @@ const Login = () => {
 
                 <button
                   type="submit"
+                  disabled={isLoading}
                   className="text-purple-800 font-bold mx-40 pt-3 underline"
                   onClick={(toggleLogin) => setIsLogin(false)}
                 >
@@ -214,7 +231,9 @@ const Login = () => {
                       <CameraAltIcon />
                       <VisuallyHiddenInput
                         type="file"
+                        id="avatar-input"
                         onChange={avatar.changeHandler}
+                          
                       />
                     </>
                   </IconButton>
@@ -304,16 +323,18 @@ const Login = () => {
                 <button
                   type="submit"
                   className="w-full bg-gradient-to-br from-orange-400 to-purple-600 p-2 rounded-md hover:bg-orange-400 transition"
-                >
+                disabled={isLoading}
+                  >
                   Sign Up
                 </button>
 
                 <Typography className="flex justify-center pt-5">OR</Typography>
 
-                <button
+                  <button
+                    disabled={isLoading}
                   type="submit"
                   className="text-purple-800 font-bold mx-[10.5rem] pt-3 underline"
-                  onClick={(toggleLogin) => setIsLogin(false)}
+                  onClick={toggleLogin}
                 >
                   Login
                 </button>
@@ -325,5 +346,6 @@ const Login = () => {
     </Container>
   );
 };
+
 
 export default Login;

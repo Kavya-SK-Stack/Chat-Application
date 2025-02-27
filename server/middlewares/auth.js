@@ -2,9 +2,11 @@ import jwt from "jsonwebtoken";
 import { ErrorHandler } from "../utils/utility.js";
 import { adminSecretKey } from "../app.js";
 import { TryCatch } from "./error.js";
+import { OURCHAT_TOKEN } from "../constants/config.js";
+import { User } from "../models/user.js";
 
 const isAuthenticated = TryCatch((req, res, next) => {
-  const token = req.cookies["ourchat-token"];
+  const token = req.cookies[OURCHAT_TOKEN];
   
   if (!token)
     return next(new ErrorHandler("Please login to access this route", 401));
@@ -23,7 +25,7 @@ const adminOnly = (req, res, next) => {
     return next(new ErrorHandler("Only Admin can access this route", 401));
 
   const secretKey = jwt.verify(token, process.env.JWT_SECRET);
-  const adminSecretKey = process.env.ADMIN_SECRET_KEY || "6packprogrammer";
+  const adminSecretKey = process.env.ADMIN_SECRET_KEY ;
 
   const isMatched = secretKey === adminSecretKey;
 
@@ -33,4 +35,30 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-export { isAuthenticated, adminOnly };
+const socketAuthenticator = async (err, socket, next) => {
+  
+  try {
+    if (err) return next(err)
+    
+    const authToken = socket.request.cookies[OURCHAT_TOKEN];
+
+    if(!authToken) return next(new ErrorHandler("Please login to access this route", 401));
+
+    const decodedData = jwt.verify(authToken, process.env.JWT_SECRET);
+
+    const user = await User.findById(decodedData.id);
+
+    if(!user) return next(new ErrorHandler("Please login to access this route", 401));
+
+    socket.user = user;
+    
+    return next();
+
+  } catch (error) {
+    console.log(error);
+    return next(new ErrorHandler("Please login to access this route", 401));
+  }
+
+}
+
+export { isAuthenticated, adminOnly, socketAuthenticator };

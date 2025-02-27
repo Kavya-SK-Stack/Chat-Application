@@ -6,6 +6,7 @@ import {
   Tooltip,
   Typography,
   Backdrop,
+  Badge,
 } from "@mui/material";
 import React, { Suspense, useState, lazy } from "react";
 import {
@@ -24,8 +25,9 @@ import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { server } from "../constants/config";
-import { setIsMobile } from "../redux/reducers/misc";
-import { setIsSearch } from "../redux/reducers/misc";
+import { setIsMobile, setIsNewGroup } from "../redux/reducers/misc";
+import { setIsSearch, setIsNotification } from "../redux/reducers/misc";
+import { resetNotificationCount } from "../redux/reducers/chat";
 
 const SearchDialog = lazy(() => import("../specific/Search"));
 const NotificationsDialog = lazy(() => import("../specific/Notifications"));
@@ -34,12 +36,13 @@ const NewGroupDialog = lazy(() => import("../specific/NewGroup"));
 const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  const {isSearch} = useSelector(state=>state.misc);
-
   
-  const [isNewGroup, setIsNewGroup] = useState(false);
-  const [isNotifications, setIsNotifications] = useState(false);
+
+  const { isSearch, isNotification, isNewGroup } = useSelector(
+    (state) => state.misc
+  ); 
+    const { notificationCount } = useSelector((state) => state.chat); 
+
 
   const handleMobile = () => {
     dispatch(setIsMobile(true));
@@ -51,13 +54,15 @@ const Header = () => {
   };
 
   const openNewGroup = () => {
-    setIsNewGroup((prev) => !prev);
+    dispatch(setIsNewGroup(true));
   };
 
-  const openNotifications = () => {
-    setIsNotifications((prev) => !prev);
-  };
+  const openNotification = () => {
+     dispatch(setIsNotification(true));
+     dispatch(resetNotificationCount());
 
+  }
+   
   const navigateToGroup = () => navigate("/groups");
 
   const logouthandler = async () => {
@@ -124,16 +129,24 @@ const Header = () => {
             </div>
           </Tooltip>
 
-          <Tooltip title="Notifications">
+          {/* <Tooltip title="Notifications">
             <div>
               <button
                 className="text-white size-auto ml-5"
-                onClick={openNotifications}
+                onClick={openNotification}
+                
               >
                 <NotificationsIcon />
               </button>
             </div>
-          </Tooltip>
+          </Tooltip> */}
+
+          <IconBtn
+  title="Notifications"
+  icon={<NotificationsIcon />}
+  onClick={openNotification}
+  value={notificationCount}
+/>
 
           <Tooltip title="Logout">
             <div>
@@ -154,7 +167,7 @@ const Header = () => {
         </Suspense>
       )}
 
-      {isNotifications && (
+      {isNotification && (
         <Suspense fallback={<Backdrop open />}>
           <NotificationsDialog />
         </Suspense>
@@ -168,5 +181,16 @@ const Header = () => {
     </>
   );
 };
+
+const IconBtn = ({ title, icon, onClick, value }) => {
+  return (
+    <Tooltip title={title}>
+      <button className="text-white size-auto pl-4" onClick={onClick}>
+        {value ? <Badge badgeContent={value} color="error"> {icon} </Badge>: icon }
+  
+      </button>
+    </Tooltip>
+  );
+}
 
 export default Header;

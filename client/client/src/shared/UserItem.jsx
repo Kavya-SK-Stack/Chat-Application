@@ -6,6 +6,7 @@ import { transformImage } from "../lib/features";
 const UserItem = ({ user, handler, handlerIsLoading, isAdded=false, styling={}, }) => {
   const { name, _id, avatar } = user;
 
+
   return (
     <ListItem>
       <Stack
@@ -15,8 +16,12 @@ const UserItem = ({ user, handler, handlerIsLoading, isAdded=false, styling={}, 
         width={"100%"}
         {...styling}
       >
-        <Avatar src= {transformImage(avatar)} />
-       
+        {Array.isArray(avatar) ? (
+          <Avatar src={avatar[0]} />
+        ) : (
+          <Avatar src={avatar} />
+        )}
+
         <Typography
           variant="body1"
           sx={{

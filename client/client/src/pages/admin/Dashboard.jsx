@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import AdminLayout from "../../layout/AdminLayout";
 
 import {
@@ -8,12 +8,12 @@ import {
   Stack,
   Typography,
   Box,
-
 } from "@mui/material";
 import {
   AdminPanelSettings as AdminPanelSettingsIcon,
   Notifications as NotificationsIcon,
-  Person as PersonIcon, Group as GroupIcon,
+  Person as PersonIcon,
+  Group as GroupIcon,
   Message as MessageIcon,
 } from "@mui/icons-material";
 import moment from "moment";
@@ -21,8 +21,53 @@ import { CurveButton, SearchField } from "../../components/StyledComponents";
 import { LineChart } from "../../specific/Charts";
 import { Doughnut } from "react-chartjs-2";
 import { DoughnutChart } from "../../specific/Charts";
+import { server } from "../../constants/config";
+import { LayoutLoader } from "../../layout/Loaders";
 
 const Dashboard = () => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token"); // Get token from storage
+        const response = await fetch(`${server}/api/v1/admin/stats`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // Include token
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Parsed API data:", data);
+
+        if (data && data.stats) {
+          setStats(data.stats);
+        } else {
+          console.error("Error: API response does not contain 'stats' field.");
+        }
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <h2>Loading...</h2>;
+  if (error) return <h2>Error: {error}</h2>;
+
   const Appbar = (
     <Paper
       elevation={3}
@@ -48,45 +93,61 @@ const Dashboard = () => {
 
   const Widgets = (
     <Stack
-    className="flex gap-12 justify-between mt-24 " 
+      className="flex gap-12 justify-between  "
       direction={{
-      xs: "column",
-      sm: "row",
+        xs: "column",
+        sm: "row",
       }}
       alignItems={"center"}
-
     >
-      <Widget title={"Users"} value={34} Icon={<PersonIcon />} />
-      <Widget title={"Chats"} value={3} Icon={<GroupIcon/> } />
-      <Widget title={"Messages"} value={453} Icon={<MessageIcon />} />
-   </Stack>
+      <Widget
+        title={"Users"}
+        value={stats ? stats.userCount : "Fetching..."}
+        Icon={<PersonIcon />}
+      />
+      <Widget
+        title={"Chats"}
+        value={stats ? stats.groupsCount : "Fetching..."}
+        Icon={<GroupIcon />}
+      />
+      <Widget
+        title={"Messages"}
+        value={stats ? stats.messageCount : "Fetching..."}
+        Icon={<MessageIcon />}
+      />
+    </Stack>
   );
 
-  return (
+  return loading ? (
+    <LayoutLoader />
+  ) : (
     <AdminLayout>
-      <Container component={"main"}>
+      <Container component={"main"} className="bg-gray-100">
         {Appbar}
 
-        <div className="flex flex-wrap justify-center lg:justify-stretch gap-8 lg:flex-row flex-col items-center lg:items-stretch">
+        <div className="flex gap-8 lg:justify-stretch lg:flex-row flex-col items-center lg:items-stretch">
           <Paper
-            className="px-14 py-8 w-full max-w-[45rem]"
+            className="px-14 py-8 w-full "
             sx={{ borderRadius: "1rem" }}
             elevation={3}
           >
             <Typography variant="h4" margin={"1rem 0"}>
               Last Messages
             </Typography>
-            <LineChart value={[23, 56, 33, 67, 33, 1]} />
+            <LineChart value={stats?.messagesChart || []} />
           </Paper>
 
           <Paper
-            className="p-4 rounded-2xl w-full max-w-[20rem] h-auto flex justify-center items-center relative"
+            className="p-4 rounded-4xl w-full max-w-[20rem] h-auto flex justify-center items-center relative"
             elevation={3}
           >
-            <div className="w-full h-60 sm:h-80 flex justify-center items-center">
+            <div className="w-full flex justify-center items-center">
               <DoughnutChart
                 labels={["Single Chats", "Group Chats"]}
-                value={[23, 66]}
+                value={[
+                  (stats?.totalChatscount ?? 0) - (stats?.groupsChats ?? 0),
+                  stats?.groupsChats ?? 0,
+                ]}
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
@@ -98,7 +159,6 @@ const Dashboard = () => {
               <Typography className="absolute items-center flex justify-center">
                 Vs
               </Typography>
-
               <PersonIcon className="absolute items-center flex justify-center ml-12 " />
             </div>
           </Paper>
@@ -113,7 +173,7 @@ const Dashboard = () => {
 const Widget = ({ title, value, Icon }) => (
   <Paper
     elevation={5}
-    className="p-8 w-[19rem] my-8 mx-0 "
+    className="p-8 my-8 mx-0 "
     sx={{ borderRadius: "1.5rem" }}
   >
     <Stack className="items-center " spacing={"1rem"}>
@@ -127,7 +187,6 @@ const Widget = ({ title, value, Icon }) => (
       >
         {value}
       </Typography>
-
       <div className="flex flex-row items-center gap-4">
         {Icon}
         <Typography>{title}</Typography>

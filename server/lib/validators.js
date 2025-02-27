@@ -7,7 +7,7 @@ const validateHandler = (req, res, next) => {
   const errorMessages = errors
     .array()
     .map((error) => error.msg)
-    .join(", ");
+    .join(",");
 
   console.log(errorMessages);
 
@@ -21,7 +21,7 @@ const registerValidator = () => [
   body("username", "Please Enter Username").notEmpty(),
   body("password", "Please Enter Password").notEmpty(),
   body("bio", "Please Enter Bio").notEmpty(),
-  check("avatar", "Please Upload Avatar").notEmpty(),
+  // check("avatar", "Please Upload Avatar").notEmpty(),
 ];
 
 const loginValidator = () => [
@@ -55,11 +55,11 @@ const removeMemberValidator = () => [
 
 
 const sendAttachmentsValidator = () => [
-  param("id", "Please Enter Chat ID").notEmpty(),
-  check("files").notEmpty()
-      .withMessage("Please Upload Attachments")
-    .isArray({ min: 1, max: 5 })
-    .withMessage("Attachments must be between 1 and 5"),
+  body("chatId", "Please Enter Chat ID").notEmpty(),
+  // check("files").notEmpty()
+  //     .withMessage("Please Upload Attachments")
+  //   .isArray({ min: 1, max: 5 })
+  //   .withMessage("Attachments must be between 1 and 5"),
 ];
 
 const chatIdValidator = () => [

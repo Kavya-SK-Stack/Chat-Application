@@ -14,22 +14,36 @@ import {
   Skeleton,
 } from "@mui/material";
 import { sampleNotifications } from "../constants/sampleData";
-import { useGetNotificationsQuery } from "../redux/api/api";
-import { useErrors } from "../hooks/hook";
+import { useAcceptFriendRequestMutation, useGetNotificationsQuery } from "../redux/api/api";
+import { useAsyncMutation, useErrors } from "../hooks/hook";
+import { useDispatch, useSelector } from "react-redux";
+import { setIsNotification } from "../redux/reducers/misc";
+import toast from "react-hot-toast";
 
 const Notifications = () => {
-  const [allRequests, setAllRequests] = useState([]); // Define allRequests as an empty array
+  
+  const { isNotification } = useSelector((state) => state.misc);
 
+  const dispatch = useDispatch();
+  
   const { isLoading, data, error, isError } = useGetNotificationsQuery();
 
-  const friendRequestHandler = ({ _id, accept }) => {};
+  const [acceptRequest] = useAsyncMutation(useAcceptFriendRequestMutation);
+
+  const friendRequestHandler = async({ _id, accept }) => { 
+    // Add friend request handler
+    dispatch(setIsNotification(false));
+
+    await acceptRequest("Accepting...", { requestId: _id, accept });
+    
+  };
+  
+  const closeHandler = () => dispatch(setIsNotification(false));
 
   useErrors([{ error, isError }]);
 
-  console.log(data);
-
   return (
-    <Dialog open>
+    <Dialog open={isNotification} onClose={closeHandler}>
       <Stack
         p={{ xs: "1rem", sm: "2rem" }}
         maxWidth={"25rem"}
@@ -41,13 +55,13 @@ const Notifications = () => {
           <Skeleton />
         ) : (
           <>
-            {allRequests && allRequests.length > 0 ? (
-              allRequests?.map(({ request }) => (
+            {data && data.allrequests && data.allrequests.length > 0 ? (
+              data.allrequests.map(({ _id, sender }) => (
                 <NotificationItem
-                  sender={request.sender}
-                  _id={request._id}
+                  sender={sender}
+                  _id={_id}
                   handler={friendRequestHandler}
-                  key={request._id}
+                  key={_id}
                 />
               ))
             ) : (

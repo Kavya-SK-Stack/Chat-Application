@@ -1,10 +1,8 @@
 import React, { memo } from "react";
 import { Link } from "react-router-dom";
 import { Typography, Stack } from "@mui/material";
-import AvatarCard from "../shared/AvatarCard"
-// or
-// import { Avatar } from "@mui/material";
-
+import AvatarCard from "../shared/AvatarCard";
+import {motion} from 'framer-motion'
 
 
  const ChatItem = ({
@@ -19,19 +17,20 @@ import AvatarCard from "../shared/AvatarCard"
   handleDeleteChat,
 }) => {
   return (
-    <Link 
+    <Link
       className="-my-1"
       to={`/chat/${_id}`}
       onContextMenu={(e) => handleDeleteChat(e, _id, groupChat)}
     >
-      <div
+      <motion.div
+        initial={{ opacity: 0, x: "-100%" }}
+        whileInView={{ opacity: 1, x: 0 }}
+        transition={{ delay: index * 0.1 }}
         className={`flex gap-4 items-center p-4 ${
           sameSender ? "bg-black text-white" : ""
         } relative`}
       >
         <AvatarCard avatar={avatar} />
-
-
 
         <Stack>
           <Typography>{name}</Typography>
@@ -42,7 +41,7 @@ import AvatarCard from "../shared/AvatarCard"
         {isOnline && (
           <div className="w-2.5 h-2.5 rounded-full bg-green-500 absolute top-1/2 right-4 transform -translate-y-1/2"></div>
         )}
-      </div>
+      </motion.div>
     </Link>
   );
 };

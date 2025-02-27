@@ -18,6 +18,7 @@ const Profile = ({ user }) => {
     >
       <Avatar
         src={transformImage(user?.avatar?.url)}
+        // src={user?.avatar?.url}
         sx={{
           width: 150,
           height: 150,
@@ -26,6 +27,7 @@ const Profile = ({ user }) => {
           border: "5px solid white",
         }}
       />
+
       <ProfileCard heading={"Bio"} text={user?.bio} />
 
       <ProfileCard

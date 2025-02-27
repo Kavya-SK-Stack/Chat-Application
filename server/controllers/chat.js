@@ -5,13 +5,16 @@ import {
   ALERT,
   REFETCH_CHATS,
   NEW_MESSAGE_ALERT,
-  NEW_ATTACHMENTS,
+  NEW_MESSAGE,
 } from "../constants/events.js";
 import { deleteFilesFromCloudinary, emitEvent } from "../utils/features.js";
 import { getOtherMember } from "../lib/helper.js";
 import { User } from "../models/user.js";
 import { Message } from "../models/message.js";
-import { attachmentsMulter } from "../middlewares/multer.js";
+import {uploadAttachments} from "../middlewares/multer.js";
+import fs from "fs";  
+import cloudinary from "cloudinary";
+
 
 const newGroupChat = TryCatch(async (req, res, next) => {
   const { name, members } = req.body;
@@ -161,7 +164,7 @@ const removeMember = TryCatch(async (req, res, next) => {
 
   if (chat.members.length <= 3)
     return next(new ErrorHandler("Group must have at least 3 members", 400));
-
+const allChatMembers = chat.members.map((i) => i.toString());
   chat.members = chat.members.filter(
     (member) => member.toString() !== userId.toString()
   );
@@ -171,11 +174,13 @@ const removeMember = TryCatch(async (req, res, next) => {
   emitEvent(
     req,
     ALERT,
-    chat.members,
-    `${userThatWillBeRemoved.name} has been removed from the group`
+    chat.members, {
+    message: `${userThatWillBeRemoved.name} has been removed from the group`, chatId,
+  }
+
   );
 
-  emitEvent(req, REFETCH_CHATS, chat.members);
+  emitEvent(req, REFETCH_CHATS, allChatMembers);
 
   return res.status(200).json({
     success: true,
@@ -211,139 +216,119 @@ const leaveGroup = TryCatch(async (req, res, next) => {
 
   const user = await User.findById(req.user, "name");
 
-  emitEvent(req, ALERT, chat.members, `User ${user.name} has left the group`);
+  emitEvent(req, ALERT, chat.members, {
+    chatId,
+    message: `User ${user.name} has left the group`,
+  });
 
   emitEvent(req, REFETCH_CHATS, chat.members);
 
   return res.status(200).json({
     success: true,
-    message: "Member removed successfully",
+    message: "Leaved Group successfully",
   });
 });
 
+
+
 const sendAttachments = TryCatch(async (req, res, next) => {
-  attachmentsMulter(req, res, async (err) => {
-     if (err) {
-      return next(new ErrorHandler("Error uploading files", 400));
+
+  const { chatId } = req.body;
+  const files = req.files || [];
+
+  console.log(files);
+
+  if (files.length < 1)
+    return next(new ErrorHandler("Please select files to send", 400));
+
+  if (files.length > 5)
+    return next(new ErrorHandler("You can only send up to 5 files", 400));
+
+  const [chat, me] = await Promise.all([
+    Chat.findById(chatId),
+    User.findById(req.user, "name"),
+  ]);
+
+  if (!chat) return next(new ErrorHandler("Chat not found", 404));
+
+  // Upload files to Cloudinary
+  const attachments = [];
+
+  for (const file of files) {
+    try {
+      let result;
+      const fileType = file.mimetype.split("/")[0]; // Get type (image, audio, video, application)
+
+      if (fileType === "image") {
+        result = await cloudinary.uploader.upload(file.path, {
+          folder: "uploads/images",
+          resource_type: "image",
+        });
+      } else if (fileType === "video") {
+        result = await cloudinary.uploader.upload(file.path, {
+          folder: "uploads/videos",
+          resource_type: "video",
+        });
+      } else if (fileType === "audio") {
+        result = await cloudinary.uploader.upload(file.path, {
+          folder: "attachments/audio",
+          resource_type: "video", // Treat audio as video
+          format: "mp3",
+        });
+      } else {
+        result = await cloudinary.uploader.upload(file.path, {
+          folder: "attachments/files",
+          resource_type: "raw", 
+        });
+      }
+
+      // Delete file from local storage after upload
+      fs.unlinkSync(file.path);
+
+      attachments.push({
+        filename: file.originalname,
+        url: result.secure_url,
+        public_id: result.public_id,
+        type: fileType, 
+      });
+    } catch (error) {
+      console.error("Cloudinary upload error:", error);
+      return next(new ErrorHandler("File upload failed", 500));
     }
+  }
 
-    if (!req.files) {
-      return next(new ErrorHandler("No files were uploaded", 400));
-    }
+  const messageForDB = {
+    content: "",
+    attachments,
+    sender: me._id,
+    chat: chatId,
+  };
 
-     const { chatId } = req.body;
+  const messageForRealTime = {
+    ...messageForDB,
+    sender: {
+      _id: me._id,
+      name: me.name,
+    },
+  };
 
-     const [chat, me] = await Promise.all([
-       Chat.findById(chatId),
-       User.findById(req.user, "name "),
-     ]);
+  const message = await Message.create(messageForDB);
 
-     if (!chat) return next(new ErrorHandler("Chat not found", 404));
+  emitEvent(req, NEW_MESSAGE, chat.members, {
+    message: messageForRealTime,
+    chatId,
+  });
 
-     const files = req.files || [];
+  emitEvent(req, NEW_MESSAGE_ALERT, chat.members, {
+    chatId,
+  });
 
-     if (files.length < 1)
-       return next(new ErrorHandler("Please select files to send", 400));
-
-     // Upload files
-
-     const attachments = [];
-
-     files.forEach((file) => {
-       attachments.push({
-         filename: file.filename,
-         filepath: file.path,
-       });
-     });
-
-     const messageForDB = {
-       content: "",
-       attachments,
-       sender: me._id,
-       chat: chatId,
-     };
-
-     const messageForRealTime = {
-       ...messageForDB,
-       sender: {
-         _id: me._id,
-         name: me.name,
-       },
-     };
-
-     const message = await Message.create(messageForDB);
-
-     emitEvent(req, NEW_ATTACHMENTS, chat.members, {
-       message: messageForRealTime,
-       chatId,
-     });
-
-     emitEvent(req, NEW_MESSAGE_ALERT, chat.members, {
-       chatId,
-     });
-
-     return res.status(200).json({
-       success: true,
-       message,
-     });
-   })
-
-  
+  return res.status(200).json({
+    success: true,
+    message,
+  });
 });
 
-
-
-// const sendAttachments = TryCatch(async (req, res, next) => {
-//   const { chatId } = req.body;
-
-//   //  Ensure user is authenticated
-//   if (!req.user || !req.user._id) {
-//     return next(new ErrorHandler("User not authenticated", 401));
-//   }
-
-//   //  Check if chat and user exist
-//   const [chat, me] = await Promise.all([
-//     Chat.findById(chatId),
-//     User.findById(req.user._id, "name"),
-//   ]);
-
-//   if (!chat) return next(new ErrorHandler("Chat not found", 404));
-//   if (!me) return next(new ErrorHandler("User not found", 404));
-
-//   //  Validate Files
-//   const files = req.files || [];
-//   if (files.length < 1)
-//     return next(new ErrorHandler("Please select files to send", 400));
-
-//   //  Store file paths
-//   const attachments = files.map((file) => ({
-//     url: `/uploads/${file.filename}`, // File path for frontend access
-//     filename: file.filename,
-//   }));
-
-//   //  Save message in database
-//   const messageForDB = {
-//     content: "",
-//     attachments,
-//     sender: me._id,
-//     chat: chatId,
-//   };
-//   const messageForRealTime = {
-//     ...messageForDB,
-//     sender: { _id: me._id, name: me.name },
-//   };
-
-//   const message = await Message.create(messageForDB);
-
-//   // Emit events for real-time updates
-//   emitEvent(req, NEW_ATTACHMENTS, chat.members, {
-//     message: messageForRealTime,
-//     chatId,
-//   });
-//   emitEvent(req, NEW_MESSAGE_ALERT, chat.members, { chatId });
-
-//   return res.status(200).json({ success: true, message });
-// });
 
 const getChatDetails = TryCatch(async (req, res, next) => {
   if (req.query.populate === "true") {
@@ -417,10 +402,15 @@ const deleteChat = TryCatch(async (req, res, next) => {
       new ErrorHandler("You are not allowed to delete the group", 403)
     );
 
-  if (!chat.groupChat && chat.creator.toString() !== req.user.toString())
-    return next(
-      new ErrorHandler("You are not allowed to delete the chat", 403)
-    );
+ if (chat.groupChat && chat.creator.toString() !== req.user.toString()) {
+   // Check if the user is an admin of the group chat
+   const isAdmin = chat.admins.includes(req.user.toString());
+   if (!isAdmin) {
+     return next(
+       new ErrorHandler("You are not allowed to delete the group chat", 403)
+     );
+   }
+ }
 
   // Delete all messages and files
 
@@ -455,6 +445,12 @@ const getMessages = TryCatch(async (req, res, next) => {
 
   const resultPerPage = 20;
   const skip = (page - 1) * resultPerPage;
+
+  const chat = await Chat.findById(chatId);
+
+  if (!chat) return next(new ErrorHandler("Chat not found", 404));
+
+  if(!chat.members.includes(req.user.toString())) return next(new ErrorHandler("You are not allowed to access this chat", 403));
 
   const [messages, totalMessagesCount] = await Promise.all([
     Message.find({ chat: chatId })

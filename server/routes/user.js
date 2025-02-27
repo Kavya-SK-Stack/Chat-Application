@@ -1,22 +1,27 @@
 import express from "express";
 import {
   acceptFriendRequest,
-  getMyFriends,
   getMyNotifications,
   getMyProfile,
+  getMyFriends,
   login,
   logout,
   newUser,
   searchUser,
   sendFriendRequest,
 } from "../controllers/User.js";
-import { singleAvatar } from "../middlewares/multer.js";
+import {uploadAvatar} from "../middlewares/multer.js";
 import { isAuthenticated } from "../middlewares/auth.js";
 import { acceptRequestValidator, loginValidator, registerValidator, sendRequestValidator, validateHandler } from "../lib/validators.js";
+import { get } from "mongoose";
 
 const app = express.Router();
 
-app.post("/new", singleAvatar, registerValidator(),validateHandler, newUser);
+
+// app.post("/new",singleAvatar, registerValidator(), validateHandler, newUser);
+
+app.post("/new", uploadAvatar, registerValidator(), validateHandler, newUser);
+
 app.post("/login", loginValidator(), validateHandler, login);
 
 // After here user must be logged in to access the routes
